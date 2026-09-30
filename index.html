@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis Finanzas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Mis Finanzas</h1>
+    <div class="month-picker">
+      <button id="prevMonth" class="icon-btn" aria-label="Mes anterior">‹</button>
+      <input type="month" id="monthInput" aria-label="Mes">
+      <button id="nextMonth" class="icon-btn" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="top-actions">
+      <label class="small">Moneda
+        <input id="currencyInput" class="currency" maxlength="4" value="$">
+      </label>
+      <button id="exportBtn" class="btn ghost">Exportar respaldo</button>
+      <label class="btn ghost file-btn">Importar<input type="file" id="importInput" accept="application/json" hidden></label>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="resumen">Resumen del mes</button>
+    <button class="tab" data-tab="movimientos">Movimientos</button>
+    <button class="tab" data-tab="evolucion">Mes a mes</button>
+    <button class="tab" data-tab="tarjetas">Tarjetas y deudas</button>
+  </nav>
+
+  <main>
+    <!-- RESUMEN -->
+    <section id="tab-resumen" class="panel active">
+      <div class="tiles" id="tiles"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Gastos por categoría</h2>
+          <div id="categoryBars"></div>
+        </div>
+        <div class="card">
+          <h2>Distribución de tus ingresos</h2>
+          <p class="muted small">Referencia: regla 50/30/20 (50% necesidades, 30% gustos, 20% ahorro).</p>
+          <div id="ruleBars"></div>
+          <div id="monthCompare" class="compare"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOVIMIENTOS -->
+    <section id="tab-movimientos" class="panel">
+      <div class="card">
+        <h2>Agregar movimiento</h2>
+        <form id="movForm" class="form-grid">
+          <label>Tipo
+            <select id="movTipo" required>
+              <option value="ingreso">Ingreso</option>
+              <option value="fijo">Gasto fijo</option>
+              <option value="variable">Gasto variable</option>
+              <option value="ahorro">Ahorro</option>
+              <option value="inversion">Inversión</option>
+            </select>
+          </label>
+          <label>Categoría
+            <input id="movCategoria" list="catList" required placeholder="Ej: Sueldo, Alquiler, Comida">
+            <datalist id="catList"></datalist>
+          </label>
+          <label>Descripción
+            <input id="movDesc" placeholder="Opcional">
+          </label>
+          <label>Monto
+            <input id="movMonto" type="number" min="0" step="0.01" required>
+          </label>
+          <label>Fecha
+            <input id="movFecha" type="date" required>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="movRecurrente"> Se repite cada mes
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn" id="movSubmit">Agregar</button>
+            <button type="button" class="btn ghost" id="movCancel" hidden>Cancelar edición</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Movimientos del mes</h2>
+          <div class="row-actions">
+            <select id="movFilter" aria-label="Filtrar por tipo">
+              <option value="">Todos</option>
+              <option value="ingreso">Ingresos</option>
+              <option value="fijo">Gastos fijos</option>
+              <option value="variable">Gastos variables</option>
+              <option value="ahorro">Ahorro</option>
+              <option value="inversion">Inversión</option>
+            </select>
+            <button class="btn ghost" id="copyRecurring" title="Copia al mes actual los movimientos marcados como 'se repite' del mes anterior">Copiar recurrentes del mes anterior</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="movTable">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th class="num">Monto</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="movEmpty" class="muted">Aún no hay movimientos este mes.</p>
+      </div>
+    </section>
+
+    <!-- EVOLUCION -->
+    <section id="tab-evolucion" class="panel">
+      <div class="card">
+        <h2>Evolución mes a mes</h2>
+        <div class="legend" id="chartLegend"></div>
+        <div id="chart" class="chart"></div>
+        <div id="tooltip" class="tooltip" hidden></div>
+      </div>
+      <div class="card">
+        <h2>Tabla comparativa</h2>
+        <div class="table-wrap">
+          <table id="evoTable">
+            <thead><tr>
+              <th>Mes</th><th class="num">Ingresos</th><th class="num">Gastos fijos</th><th class="num">Gastos variables</th>
+              <th class="num">Ahorro</th><th class="num">Inversión</th><th class="num">Disponible</th>
+              <th class="num">% ahorro</th><th class="num">Gasto vs mes anterior</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TARJETAS -->
+    <section id="tab-tarjetas" class="panel">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Mis tarjetas / deudas</h2>
+          <form id="cardForm" class="form-grid">
+            <label>Nombre<input id="cardNombre" required placeholder="Ej: Visa BCP"></label>
+            <label>Saldo actual<input id="cardSaldo" type="number" min="0" step="0.01" required></label>
+            <label>Tasa de interés anual (%)<input id="cardTasa" type="number" min="0" step="0.01" required></label>
+            <label>Pago mínimo mensual<input id="cardMinimo" type="number" min="0" step="0.01" required></label>
+            <div class="form-actions">
+              <button class="btn" type="submit" id="cardSubmit">Agregar tarjeta</button>
+              <button class="btn ghost" type="button" id="cardCancel" hidden>Cancelar edición</button>
+            </div>
+          </form>
+          <div class="table-wrap">
+            <table id="cardTable">
+              <thead><tr><th>Tarjeta</th><th class="num">Saldo</th><th class="num">Tasa</th><th class="num">Mínimo</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>¿Cuánto puedes destinar al mes?</h2>
+          <label>Presupuesto mensual total para pagar deudas
+            <input id="debtBudget" type="number" min="0" step="0.01">
+          </label>
+          <p class="muted small" id="budgetHint"></p>
+          <div class="strategy-info">
+            <p><strong>Bola de nieve:</strong> pagas el mínimo en todas y todo el dinero extra va a la deuda con <em>menor saldo</em>. Al liquidarla, su pago “rueda” a la siguiente. Motiva porque ves resultados rápido.</p>
+            <p><strong>Avalancha:</strong> pagas el mínimo en todas y el extra va a la deuda con <em>mayor tasa de interés</em>. Matemáticamente es la que menos intereses paga.</p>
+            <p><strong>Solo mínimos:</strong> referencia de lo que pasaría si solo pagas el mínimo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Comparación de estrategias</h2>
+        <div id="strategyResult"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
